@@ -29,7 +29,7 @@ public class DatasetReaderThread extends Thread {
                 SmartMeterMeasurement smartMeterMeasurement =
                         new SmartMeterMeasurement(Double.parseDouble(power[1]), Double.parseDouble(current[1]), Double.parseDouble(energy[1]));
 
-                esperService.sendEvent(smartMeterMeasurement);
+                esperService.sendEvent(smartMeterMeasurement, "SmartMeterMeasurement");
             }
 
         } catch (FileNotFoundException | InterruptedException e) {

@@ -12,6 +12,8 @@ import lsdi.edgeworker.DataTransferObjects.DeployRequest;
 import lsdi.edgeworker.Models.SmartMeterMeasurement;
 import org.springframework.stereotype.Service;
 
+import java.util.Map;
+
 @Data
 @Service
 public final class EsperService {
@@ -46,8 +48,8 @@ public final class EsperService {
         runtime.getDeploymentService().undeploy(deploymentId);
     }
 
-    public void sendEvent(SmartMeterMeasurement smartMeterMeasurement) {
-        runtime.getEventService().sendEventBean(smartMeterMeasurement, "SmartMeterMeasurement");
+    public void sendEvent(SmartMeterMeasurement event, String type) {
+        runtime.getEventService().sendEventBean(event, type);
     }
 
     public EPStatement getStatement(String deploymentId, String statementName) {
@@ -55,6 +57,13 @@ public final class EsperService {
     }
 
     public static String buildEPL(DeployRequest deployRequest) {
-        return "@Name('" + deployRequest.getName() + "')\n" + deployRequest.getRule() + ";\n";
+        StringBuilder stringBuilder = new StringBuilder();
+
+        stringBuilder.append("@Name('");
+        stringBuilder.append(deployRequest.getRuleName());
+        stringBuilder.append("')\n");
+        stringBuilder.append(deployRequest.getRuleDefinition());
+        stringBuilder.append(";\n");
+        return stringBuilder.toString();
     }
 }

@@ -22,13 +22,13 @@ public class DeployController {
         try {
             EPCompiled epCompiled = esperService.compile(EsperService.buildEPL(deployRequest));
             EPDeployment epDeployment = esperService.deploy(epCompiled);
-            EPStatement epStatement = esperService.getStatement(epDeployment.getDeploymentId(), deployRequest.getName());
-            epStatement.addListener(new EventListener());
+            EPStatement epStatement = esperService.getStatement(epDeployment.getDeploymentId(), deployRequest.getRuleName());
+            epStatement.addListener(new EventListener(deployRequest.ruleUuid));
 
             return new DeployResponse(
                     epDeployment.getDeploymentId(),
-                    deployRequest.getName(),
-                    deployRequest.getRule(),
+                    deployRequest.getRuleName(),
+                    deployRequest.getRuleDefinition(),
                     "Deployed successfully.");
         } catch (EPCompileException | EPDeployException exception) {
             exception.printStackTrace();
