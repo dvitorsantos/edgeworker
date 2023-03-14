@@ -7,10 +7,7 @@ import lsdi.edgeworker.DataTransferObjects.DeployRequest;
 import lsdi.edgeworker.DataTransferObjects.DeployResponse;
 import lsdi.edgeworker.Listeners.EventListener;
 import lsdi.edgeworker.Services.EsperService;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 
 @RestController
@@ -27,16 +24,14 @@ public class DeployController {
 
             return new DeployResponse(
                     epDeployment.getDeploymentId(),
-                    deployRequest.getRuleName(),
-                    deployRequest.getRuleDefinition(),
-                    "Deployed successfully.");
+                    deployRequest.getRuleUuid());
         } catch (EPCompileException | EPDeployException exception) {
             exception.printStackTrace();
             return "Something went wrong.";
         }
     }
 
-    @PostMapping("/undeploy/{deploymentId}")
+    @DeleteMapping("/undeploy/{deploymentId}")
     public Object undeploy(@PathVariable String deploymentId) {
         try {
             esperService.undeploy(deploymentId);
