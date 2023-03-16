@@ -2,6 +2,7 @@ package lsdi.edgeworker;
 
 import lsdi.edgeworker.DataTransferObjects.IoTGatewayRequest;
 import lsdi.edgeworker.Threads.DatasetReaderThread;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -12,6 +13,8 @@ import org.springframework.web.client.RestTemplate;
 
 @SpringBootApplication
 public class EdgeworkerApplication {
+	@Value("${iotcataloger.url}")
+	private String iotCatalogerUrl;
 	public static void main(String[] args) {
 		SpringApplication.run(EdgeworkerApplication.class, args);
 	}
@@ -23,8 +26,6 @@ public class EdgeworkerApplication {
 	}
 
 	private void selfRegister() {
-		String iotCatalogerUrl = "http://localhost:8280";
-
 		RestTemplate restTemplate = new RestTemplate();
 
 		IoTGatewayRequest request = new IoTGatewayRequest();
