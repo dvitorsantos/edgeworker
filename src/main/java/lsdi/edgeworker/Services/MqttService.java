@@ -27,7 +27,7 @@ public final class MqttService {
         options.setKeepAliveInterval(30);
 
         try {
-            client = new MqttClient("tcp://localhost:1883", "fogworker");
+            client = new MqttClient("tcp://mosquitto:1883", "edgeworker");
             client.connect(options);
         } catch (MqttException e) {
             e.printStackTrace();
@@ -45,13 +45,5 @@ public final class MqttService {
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
-
-    public String getMqttClientId() {
-        return clientUuid;
-    }
-
-    public String getMqttBrokerUrl() {
-        return mosquittoUrl;
     }
 }
