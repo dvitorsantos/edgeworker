@@ -13,4 +13,6 @@ public class DeployResponse {
     public String deployUuid;
     @JsonProperty("rule_uuid")
     public String ruleUuid;
+    @JsonProperty("status")
+    public String status;
 }

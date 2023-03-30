@@ -9,6 +9,7 @@ import com.espertech.esper.compiler.client.EPCompilerProvider;
 import com.espertech.esper.runtime.client.*;
 import lombok.Data;
 import lsdi.edgeworker.DataTransferObjects.DeployRequest;
+import lsdi.edgeworker.DataTransferObjects.RuleRequestResponse;
 import lsdi.edgeworker.Models.SmartMeterMeasurement;
 import org.springframework.stereotype.Service;
 
@@ -56,13 +57,12 @@ public final class EsperService {
         return runtime.getDeploymentService().getStatement(deploymentId, statementName);
     }
 
-    public static String buildEPL(DeployRequest deployRequest) {
+    public static String buildEPL(RuleRequestResponse edgeRule) {
         StringBuilder stringBuilder = new StringBuilder();
-
         stringBuilder.append("@Name('");
-        stringBuilder.append(deployRequest.getRuleName());
+        stringBuilder.append(edgeRule.getName());
         stringBuilder.append("')\n");
-        stringBuilder.append(deployRequest.getRuleDefinition());
+        stringBuilder.append(edgeRule.getDefinition());
         stringBuilder.append(";\n");
         return stringBuilder.toString();
     }

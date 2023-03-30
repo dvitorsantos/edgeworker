@@ -1,5 +1,6 @@
 package lsdi.edgeworker.Services;
 
+import org.eclipse.paho.client.mqttv3.IMqttMessageListener;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
@@ -42,6 +43,14 @@ public final class MqttService {
     public void publish(String topic, byte[] payload) {
         try {
             client.publish(topic, payload, 0, false);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void subscribe(String topic, IMqttMessageListener handler) {
+        try {
+            client.subscribe(topic, handler);
         } catch (Exception e) {
             e.printStackTrace();
         }
