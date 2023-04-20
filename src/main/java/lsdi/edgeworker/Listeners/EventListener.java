@@ -14,18 +14,18 @@ public class EventListener implements UpdateListener {
 
     RestTemplate restTemplate = new RestTemplate();
 
-    private final String ruleUuid;
+    private final String eventType;
 
     private final String webhookUrl;
 
-    public EventListener(String ruleUuid, String webhookUrl) {
-        this.ruleUuid = ruleUuid;
+    public EventListener(String eventType, String webhookUrl) {
+        this.eventType = eventType;
         this.webhookUrl = webhookUrl;
     }
 
     @Override
     public void update(EventBean[] newData, EventBean[] oldEvents, EPStatement statement, EPRuntime runtime) {
-        String topic = "cdpo/event/" + ruleUuid;
+        String topic = "cdpo/event/" + eventType;
         ObjectMapper mapper = new ObjectMapper();
         try {
             if (webhookUrl != null) restTemplate.postForObject(webhookUrl, mapper.writeValueAsString((newData[0]).getUnderlying()), String.class);

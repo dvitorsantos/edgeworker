@@ -21,7 +21,7 @@ public class DeployService {
             EPCompiled epCompiled = esperService.compile(EsperService.buildEPL(edgeRule));
             EPDeployment epDeployment = esperService.deploy(epCompiled);
             EPStatement epStatement = esperService.getStatement(epDeployment.getDeploymentId(), edgeRule.getName());
-            epStatement.addListener(new EventListener(edgeRule.getUuid(), edgeRule.getWebhookUrl()));
+            epStatement.addListener(new EventListener(edgeRule.getEventType(), edgeRule.getWebhookUrl()));
 
             return new DeployResponse(epDeployment.getDeploymentId(), edgeRule.getUuid(), "DONE");
         } catch (EPCompileException | EPDeployException exception) {
