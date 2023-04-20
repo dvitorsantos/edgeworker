@@ -77,19 +77,21 @@ public class EdgeworkerApplication {
 	private void subscribeToDeploy() {
 		MqttService mqttService = MqttService.getInstance();
 		DeployService deployService = new DeployService();
-		mqttService.subscribe("/deploy", (topic, message) -> {
-			ObjectMapper mapper = new ObjectMapper();
-			try {
-				DeployRequest deployRequest = mapper.readValue(message.toString(), DeployRequest.class);
-				deployRequest.getEdgeRules().forEach(edgeRule -> {
-					new Thread(() -> {
-						DeployResponse deployResponse = deployService.deploy(edgeRule);
-						publishToDeployStatus(deployResponse);
-					}).start();
-				});
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
+		mqttService.subscribe("/deploy/" + edgeworkerUuid, (topic, message) -> {
+			new Thread(() -> {
+				ObjectMapper mapper = new ObjectMapper();
+				try {
+					DeployRequest deployRequest = mapper.readValue(message.toString(), DeployRequest.class);
+					deployRequest.getEdgeRules().forEach(edgeRule -> {
+						new Thread(() -> {
+							DeployResponse deployResponse = deployService.deploy(edgeRule);
+							publishToDeployStatus(deployResponse);
+						}).start();
+					});
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}).start();
 		});
 	}
 

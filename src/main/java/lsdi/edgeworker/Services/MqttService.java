@@ -15,10 +15,10 @@ public final class MqttService {
     private MqttClient client;
 
     @Value("${mosquitto.url}")
-    private String mosquittoUrl;
+    private String mosquittoUrl = System.getenv("MOSQUITTO_URL");
 
     @Value("${mosquitto.clientid}")
-    private String clientUuid;
+    private String clientUuid = System.getenv("EDGEWORKER_UUID");
 
     private MqttService() {
         options = new MqttConnectOptions();
@@ -28,7 +28,7 @@ public final class MqttService {
         options.setKeepAliveInterval(30);
 
         try {
-            client = new MqttClient("tcp://mosquitto:1883", "edgeworker");
+            client = new MqttClient(mosquittoUrl, clientUuid);
             client.connect(options);
         } catch (MqttException e) {
             e.printStackTrace();
