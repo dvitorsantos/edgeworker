@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class DeployService {
+    String hostUuid = System.getenv("EDGEWORKER_UUID");
     EsperService esperService = EsperService.getInstance();
 
     public DeployResponse deploy(RuleRequestResponse edgeRule) {
@@ -23,20 +24,20 @@ public class DeployService {
             EPStatement epStatement = esperService.getStatement(epDeployment.getDeploymentId(), edgeRule.getName());
             epStatement.addListener(new EventListener(edgeRule.getEventType(), edgeRule.getWebhookUrl()));
 
-            return new DeployResponse(epDeployment.getDeploymentId(), edgeRule.getUuid(), "DONE");
+            return new DeployResponse(hostUuid, epDeployment.getDeploymentId(), edgeRule.getUuid(), "DONE");
         } catch (EPCompileException | EPDeployException exception) {
             exception.printStackTrace();
-            return new DeployResponse(null, edgeRule.getUuid(), "ERROR");
+            return new DeployResponse(hostUuid, null, edgeRule.getUuid(), "ERROR");
         }
     }
 
     public DeployResponse undeploy(String deploymentId) {
         try {
             esperService.undeploy(deploymentId);
-            return new DeployResponse(deploymentId, null, "UNDEPLOYED");
+            return new DeployResponse(hostUuid, deploymentId, null, "UNDEPLOYED");
         } catch (EPUndeployException exception) {
             exception.printStackTrace();
-            return new DeployResponse(deploymentId, null, "ERROR");
+            return new DeployResponse(hostUuid, deploymentId, null, "ERROR");
         }
     }
 }
