@@ -6,12 +6,10 @@ import com.espertech.esper.runtime.client.EPDeployException;
 import com.espertech.esper.runtime.client.EPDeployment;
 import com.espertech.esper.runtime.client.EPStatement;
 import com.espertech.esper.runtime.client.EPUndeployException;
-import lsdi.edgeworker.DataTransferObjects.DeployRequest;
 import lsdi.edgeworker.DataTransferObjects.DeployResponse;
 import lsdi.edgeworker.DataTransferObjects.RuleRequestResponse;
 import lsdi.edgeworker.Listeners.EventListener;
 import org.springframework.stereotype.Service;
-
 @Service
 public class DeployService {
     String hostUuid = System.getenv("EDGEWORKER_UUID");
@@ -24,7 +22,7 @@ public class DeployService {
             EPStatement epStatement = esperService.getStatement(epDeployment.getDeploymentId(), edgeRule.getName());
             epStatement.addListener(new EventListener(edgeRule.getEventType(), edgeRule.getWebhookUrl()));
 
-            return new DeployResponse(hostUuid, epDeployment.getDeploymentId(), edgeRule.getUuid(), "DONE");
+            return new DeployResponse(hostUuid, epDeployment.getDeploymentId(), edgeRule.getUuid(), "DEPLOYED");
         } catch (EPCompileException | EPDeployException exception) {
             exception.printStackTrace();
             return new DeployResponse(hostUuid, null, edgeRule.getUuid(), "ERROR");

@@ -42,7 +42,6 @@ public class EdgeworkerApplication {
 	@EventListener(ApplicationReadyEvent.class)
 	public void init() {
 		selfRegister();
-//		selfTag();
 		subscribeToDeploy();
 		subscribeToUndeploy();
 		new ContextDataReaderThread().start();
