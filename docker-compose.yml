@@ -1,0 +1,17 @@
+version: "3"
+services:
+  mosquitto:
+    image: eclipse-mosquitto
+    container_name: mosquitto
+  edgeworker:
+    build: .
+    container_name: edgeworker
+    expose:
+      - 8080
+    ports:
+      - 8080:8080
+    restart: unless-stopped
+    depends_on:
+      - mosquitto
+    links:
+      - mosquitto

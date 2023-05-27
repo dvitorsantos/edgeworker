@@ -1,9 +1,10 @@
 package lsdi.edgeworker.Services;
 
+import org.eclipse.paho.client.mqttv3.IMqttMessageListener;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
-import org.eclipse.paho.client.mqttv3.persist.MqttDefaultFilePersistence;
+import org.springframework.beans.factory.annotation.Value;
 
 public final class MqttService {
     private static MqttService instance;
@@ -12,9 +13,11 @@ public final class MqttService {
 
     private MqttClient client;
 
-    private static final String MQTT_BROKER_URL = "tcp://localhost:1883";
+    @Value("${mosquitto.url}")
+    private String mosquittoUrl = System.getenv("MOSQUITTO_URL");
 
-    private static final String MQTT_CLIENT_ID = "edgeworker";
+    @Value("${mosquitto.clientid}")
+    private String clientUuid = System.getenv("EDGEWORKER_UUID");
 
     private MqttService() {
         options = new MqttConnectOptions();
@@ -24,7 +27,7 @@ public final class MqttService {
         options.setKeepAliveInterval(30);
 
         try {
-            client = new MqttClient(MQTT_BROKER_URL, MQTT_CLIENT_ID);
+            client = new MqttClient(mosquittoUrl, clientUuid);
             client.connect(options);
         } catch (MqttException e) {
             e.printStackTrace();
@@ -44,11 +47,11 @@ public final class MqttService {
         }
     }
 
-    public String getMqttClientId() {
-        return MQTT_CLIENT_ID;
-    }
-
-    public String getMqttBrokerUrl() {
-        return MQTT_BROKER_URL;
+    public void subscribe(String topic, IMqttMessageListener handler) {
+        try {
+            client.subscribe(topic, handler);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

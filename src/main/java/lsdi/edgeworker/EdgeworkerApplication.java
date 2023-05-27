@@ -1,43 +1,151 @@
 package lsdi.edgeworker;
 
-import lsdi.edgeworker.DataTransferObjects.IoTGatewayRequest;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lsdi.edgeworker.DataTransferObjects.*;
+import lsdi.edgeworker.Models.Location;
+import lsdi.edgeworker.Models.Vehicle;
+import lsdi.edgeworker.Services.*;
 import lsdi.edgeworker.Threads.DatasetReaderThread;
+import lsdi.edgeworker.Threads.ContextDataReaderThread;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.web.client.RestTemplate;
+
+import java.io.DataInput;
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 
 @SpringBootApplication
 public class EdgeworkerApplication {
-	public static void main(String[] args) {
-		SpringApplication.run(EdgeworkerApplication.class, args);
-	}
+    @Value("${edgeworker.uuid}")
+    private String edgeworkerUuid;
+    @Value("${edgeworker.name}")
+    private String edgeworkerName;
+    @Value("${edgeworker.url}")
+    private String edgeworkerUrl;
+    @Value("${iotcataloger.url}")
+    private String iotCatalogerUrl;
+    @Value("${tagger.url}")
+    private String taggerUrl;
 
-	@EventListener(ApplicationReadyEvent.class)
-	public void initCombed() {
-		selfRegister();
-		new DatasetReaderThread().start();
-	}
+    public static void main(String[] args) {
+        SpringApplication.run(EdgeworkerApplication.class, args);
+    }
 
-	private void selfRegister() {
-		String iotCatalogerUrl = "http://localhost:8280";
+    @EventListener(ApplicationReadyEvent.class)
+    public void init() {
+        selfRegister();
+        subscribeToDeploy();
+        subscribeToUndeploy();
+        subscribeToBusLocationEvents();
+        new ContextDataReaderThread().start();
+        new DatasetReaderThread().start();
+    }
 
-		RestTemplate restTemplate = new RestTemplate();
+    private void selfRegister() {
+        IotCatalogerService iotCatalogerService = new IotCatalogerService(iotCatalogerUrl);
+        IoTGatewayRequest request = new IoTGatewayRequest();
+        request.setUuid(edgeworkerUuid);
+        request.setDistinguishedName(edgeworkerName);
+        request.setUrl(edgeworkerUrl);
+        request.setLatitude(1.0);
+        request.setLongitude(1.0);
 
-		IoTGatewayRequest request = new IoTGatewayRequest();
-		request.setUuid("edgeworker");
-		request.setDistinguishedName("edgeworker");
-		request.setUrl("http://localhost:9696/");
-		request.setLatitude(1.0);
-		request.setLongitude(1.0);
+        iotCatalogerService.registerGateway(request);
+    }
 
-		HttpHeaders headers = new HttpHeaders();
-		headers.set("X-SSL-Client-DN", request.getDistinguishedName());
+    private void subscribeToDeploy() {
+        MqttService mqttService = MqttService.getInstance();
+        DeployService deployService = new DeployService();
+        mqttService.subscribe("/deploy/" + edgeworkerUuid, (topic, message) -> {
+            new Thread(() -> {
+                ObjectMapper mapper = new ObjectMapper();
+                try {
+                    DeployRequest deployRequest = mapper.readValue(message.toString(), DeployRequest.class);
+                    deployRequest.getEdgeRules().forEach(edgeRule -> {
+                        new Thread(() -> {
+                            DeployResponse deployResponse = deployService.deploy(edgeRule);
+                            publishToDeployStatus(deployResponse);
+                        }).start();
+                    });
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }).start();
+        });
+    }
 
-		HttpEntity<Object> entity = new HttpEntity<>(request, headers);
-		restTemplate.postForObject(iotCatalogerUrl + "/gateway", entity, IoTGatewayRequest.class);
-	}
+    private void subscribeToUndeploy() {
+        MqttService mqttService = MqttService.getInstance();
+        DeployService deployService = new DeployService();
+        mqttService.subscribe("/undeploy", (topic, message) -> {
+            ObjectMapper mapper = new ObjectMapper();
+            try {
+                String deployId = mapper.readValue(message.toString(), String.class);
+                deployService.undeploy(deployId);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
+    public void subscribeToBusLocationEvents() {
+        MqttService mqttService = MqttService.getInstance();
+        EsperService esperService = new EsperService();
+        ObjectMapper mapper = new ObjectMapper();
+        mqttService.subscribe("bus/" + edgeworkerUuid, (topic, message) -> {
+            new Thread(() -> {
+                try {
+                    Vehicle vehicle = mapper.readValue(message.getPayload(), Vehicle.class);
+                    esperService.sendEvent(vehicle, "Vehicle");
+                    this.publishToContextData(vehicle);
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }).start();
+        });
+    }
+
+    private void publishToDeployStatus(DeployResponse deployResponse) {
+        MqttService mqttService = MqttService.getInstance();
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            new Thread(() -> {
+                try {
+                    mqttService.publish("/deploy/" + deployResponse.getRuleUuid(), mapper.writeValueAsBytes(deployResponse));
+                } catch (JsonProcessingException e) {
+                    throw new RuntimeException(e);
+                }
+            }).start();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void publishToContextData(Vehicle vehicle) {
+        ContextMatcherService contextMatcherService = new ContextMatcherService("http://contextmatcher:8080");
+        try {
+            new Thread(() -> {
+                try {
+                    ContextDataRequestResponse contextDataRequestResponse = new ContextDataRequestResponse();
+                    contextDataRequestResponse.setHostUuid(edgeworkerUuid);
+                    contextDataRequestResponse.setLocation(new Location(vehicle.getLatitude(), vehicle.getLongitude()));
+                    contextDataRequestResponse.setTimestamp(LocalDateTime.now().toString());
+                    contextMatcherService.postContextData(contextDataRequestResponse);
+                    Thread.sleep(10000);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }).start();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 }

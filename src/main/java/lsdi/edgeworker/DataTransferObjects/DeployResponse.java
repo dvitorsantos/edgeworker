@@ -9,8 +9,12 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class DeployResponse {
+    @JsonProperty("host_uuid")
+    public String hostUuid;
     @JsonProperty("deploy_uuid")
     public String deployUuid;
     @JsonProperty("rule_uuid")
     public String ruleUuid;
+    @JsonProperty("status")
+    public String status;
 }

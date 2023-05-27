@@ -9,7 +9,10 @@ import com.espertech.esper.compiler.client.EPCompilerProvider;
 import com.espertech.esper.runtime.client.*;
 import lombok.Data;
 import lsdi.edgeworker.DataTransferObjects.DeployRequest;
+import lsdi.edgeworker.DataTransferObjects.RuleRequestResponse;
+import lsdi.edgeworker.Models.Location;
 import lsdi.edgeworker.Models.SmartMeterMeasurement;
+import lsdi.edgeworker.Models.Vehicle;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
@@ -26,6 +29,7 @@ public final class EsperService {
     public EsperService() {
         configuration = new Configuration();
         configuration.getCommon().addEventType("SmartMeterMeasurement", SmartMeterMeasurement.class);
+        configuration.getCommon().addEventType("Vehicle", Location.class);
         arguments = new CompilerArguments(configuration);
         compiler = EPCompilerProvider.getCompiler();
         runtime = EPRuntimeProvider.getDefaultRuntime(configuration);
@@ -52,17 +56,20 @@ public final class EsperService {
         runtime.getEventService().sendEventBean(event, type);
     }
 
+    public void sendEvent(Vehicle event, String type) {
+        runtime.getEventService().sendEventBean(event, type);
+    }
+
     public EPStatement getStatement(String deploymentId, String statementName) {
         return runtime.getDeploymentService().getStatement(deploymentId, statementName);
     }
 
-    public static String buildEPL(DeployRequest deployRequest) {
+    public static String buildEPL(RuleRequestResponse edgeRule) {
         StringBuilder stringBuilder = new StringBuilder();
-
         stringBuilder.append("@Name('");
-        stringBuilder.append(deployRequest.getRuleName());
+        stringBuilder.append(edgeRule.getName());
         stringBuilder.append("')\n");
-        stringBuilder.append(deployRequest.getRuleDefinition());
+        stringBuilder.append(edgeRule.getDefinition());
         stringBuilder.append(";\n");
         return stringBuilder.toString();
     }
