@@ -2,14 +2,10 @@ package lsdi.edgeworker;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lsdi.edgeworker.DataTransferObjects.DeployRequest;
-import lsdi.edgeworker.DataTransferObjects.DeployResponse;
-import lsdi.edgeworker.DataTransferObjects.IoTGatewayRequest;
-import lsdi.edgeworker.DataTransferObjects.TaggedObjectRequest;
-import lsdi.edgeworker.Services.DeployService;
-import lsdi.edgeworker.Services.IotCatalogerService;
-import lsdi.edgeworker.Services.MqttService;
-import lsdi.edgeworker.Services.TaggerService;
+import lsdi.edgeworker.DataTransferObjects.*;
+import lsdi.edgeworker.Models.Location;
+import lsdi.edgeworker.Models.Vehicle;
+import lsdi.edgeworker.Services.*;
 import lsdi.edgeworker.Threads.DatasetReaderThread;
 import lsdi.edgeworker.Threads.ContextDataReaderThread;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,109 +15,137 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 
 import java.io.DataInput;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
 @SpringBootApplication
 public class EdgeworkerApplication {
-	@Value("${edgeworker.uuid}")
-	private String edgeworkerUuid;
-	@Value("${edgeworker.name}")
-	private String edgeworkerName;
-	@Value("${edgeworker.url}")
-	private String edgeworkerUrl;
-	@Value("${iotcataloger.url}")
-	private String iotCatalogerUrl;
-	@Value("${tagger.url}")
-	private String taggerUrl;
+    @Value("${edgeworker.uuid}")
+    private String edgeworkerUuid;
+    @Value("${edgeworker.name}")
+    private String edgeworkerName;
+    @Value("${edgeworker.url}")
+    private String edgeworkerUrl;
+    @Value("${iotcataloger.url}")
+    private String iotCatalogerUrl;
+    @Value("${tagger.url}")
+    private String taggerUrl;
 
-	public static void main(String[] args) {
-		SpringApplication.run(EdgeworkerApplication.class, args);
-	}
+    public static void main(String[] args) {
+        SpringApplication.run(EdgeworkerApplication.class, args);
+    }
 
-	@EventListener(ApplicationReadyEvent.class)
-	public void init() {
-		selfRegister();
-		subscribeToDeploy();
-		subscribeToUndeploy();
-		new ContextDataReaderThread().start();
-		new DatasetReaderThread().start();
-	}
+    @EventListener(ApplicationReadyEvent.class)
+    public void init() {
+        selfRegister();
+        subscribeToDeploy();
+        subscribeToUndeploy();
+        subscribeToBusLocationEvents();
+        new ContextDataReaderThread().start();
+        new DatasetReaderThread().start();
+    }
 
-	private void selfRegister() {
-		IotCatalogerService iotCatalogerService = new IotCatalogerService(iotCatalogerUrl);
-		IoTGatewayRequest request = new IoTGatewayRequest();
-		request.setUuid(edgeworkerUuid);
-		request.setDistinguishedName(edgeworkerName);
-		request.setUrl(edgeworkerUrl);
-		request.setLatitude(1.0);
-		request.setLongitude(1.0);
+    private void selfRegister() {
+        IotCatalogerService iotCatalogerService = new IotCatalogerService(iotCatalogerUrl);
+        IoTGatewayRequest request = new IoTGatewayRequest();
+        request.setUuid(edgeworkerUuid);
+        request.setDistinguishedName(edgeworkerName);
+        request.setUrl(edgeworkerUrl);
+        request.setLatitude(1.0);
+        request.setLongitude(1.0);
 
-		iotCatalogerService.registerGateway(request);
-	}
+        iotCatalogerService.registerGateway(request);
+    }
 
-	private void selfTag() {
-		TaggerService taggerService = new TaggerService(taggerUrl);
-		TaggedObjectRequest request = new TaggedObjectRequest();
-		request.setUuid(edgeworkerUuid);
-		request.setType("FogNode");
+    private void subscribeToDeploy() {
+        MqttService mqttService = MqttService.getInstance();
+        DeployService deployService = new DeployService();
+        mqttService.subscribe("/deploy/" + edgeworkerUuid, (topic, message) -> {
+            new Thread(() -> {
+                ObjectMapper mapper = new ObjectMapper();
+                try {
+                    DeployRequest deployRequest = mapper.readValue(message.toString(), DeployRequest.class);
+                    deployRequest.getEdgeRules().forEach(edgeRule -> {
+                        new Thread(() -> {
+                            DeployResponse deployResponse = deployService.deploy(edgeRule);
+                            publishToDeployStatus(deployResponse);
+                        }).start();
+                    });
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }).start();
+        });
+    }
 
-		Map<String, String> tags = new HashMap<>();
-		tags.put("type", "fognode");
+    private void subscribeToUndeploy() {
+        MqttService mqttService = MqttService.getInstance();
+        DeployService deployService = new DeployService();
+        mqttService.subscribe("/undeploy", (topic, message) -> {
+            ObjectMapper mapper = new ObjectMapper();
+            try {
+                String deployId = mapper.readValue(message.toString(), String.class);
+                deployService.undeploy(deployId);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+    }
 
-		request.setTags(tags);
-		taggerService.tagObject(request);
-	}
+    public void subscribeToBusLocationEvents() {
+        MqttService mqttService = MqttService.getInstance();
+        EsperService esperService = new EsperService();
+        ObjectMapper mapper = new ObjectMapper();
+        mqttService.subscribe("bus/" + edgeworkerUuid, (topic, message) -> {
+            new Thread(() -> {
+                try {
+                    Vehicle vehicle = mapper.readValue(message.getPayload(), Vehicle.class);
+                    esperService.sendEvent(vehicle, "Vehicle");
+                    this.publishToContextData(vehicle);
 
-	private void subscribeToDeploy() {
-		MqttService mqttService = MqttService.getInstance();
-		DeployService deployService = new DeployService();
-		mqttService.subscribe("/deploy/" + edgeworkerUuid, (topic, message) -> {
-			new Thread(() -> {
-				ObjectMapper mapper = new ObjectMapper();
-				try {
-					DeployRequest deployRequest = mapper.readValue(message.toString(), DeployRequest.class);
-					deployRequest.getEdgeRules().forEach(edgeRule -> {
-						new Thread(() -> {
-							DeployResponse deployResponse = deployService.deploy(edgeRule);
-							publishToDeployStatus(deployResponse);
-						}).start();
-					});
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}).start();
-		});
-	}
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }).start();
+        });
+    }
 
-	private void subscribeToUndeploy() {
-		MqttService mqttService = MqttService.getInstance();
-		DeployService deployService = new DeployService();
-		mqttService.subscribe("/undeploy", (topic, message) -> {
-			ObjectMapper mapper = new ObjectMapper();
-			try {
-				String deployId = mapper.readValue(message.toString(), String.class);
-				deployService.undeploy(deployId);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		});
-	}
+    private void publishToDeployStatus(DeployResponse deployResponse) {
+        MqttService mqttService = MqttService.getInstance();
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            new Thread(() -> {
+                try {
+                    mqttService.publish("/deploy/" + deployResponse.getRuleUuid(), mapper.writeValueAsBytes(deployResponse));
+                } catch (JsonProcessingException e) {
+                    throw new RuntimeException(e);
+                }
+            }).start();
 
-	private void publishToDeployStatus(DeployResponse deployResponse) {
-		MqttService mqttService = MqttService.getInstance();
-		ObjectMapper mapper = new ObjectMapper();
-		try {
-			new Thread(() -> {
-				try {
-					mqttService.publish("/deploy/" + deployResponse.getRuleUuid(), mapper.writeValueAsBytes(deployResponse));
-				} catch (JsonProcessingException e) {
-					throw new RuntimeException(e);
-				}
-			}).start();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
+    public void publishToContextData(Vehicle vehicle) {
+        ContextMatcherService contextMatcherService = new ContextMatcherService("http://contextmatcher:8080");
+        try {
+            new Thread(() -> {
+                try {
+                    ContextDataRequestResponse contextDataRequestResponse = new ContextDataRequestResponse();
+                    contextDataRequestResponse.setHostUuid(edgeworkerUuid);
+                    contextDataRequestResponse.setLocation(new Location(vehicle.getLatitude(), vehicle.getLongitude()));
+                    contextDataRequestResponse.setTimestamp(LocalDateTime.now().toString());
+                    contextMatcherService.postContextData(contextDataRequestResponse);
+                    Thread.sleep(10000);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }).start();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 }
