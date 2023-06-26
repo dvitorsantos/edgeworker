@@ -3,7 +3,6 @@ package lsdi.edgeworker;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lsdi.edgeworker.DataTransferObjects.*;
-import lsdi.edgeworker.Models.Location;
 import lsdi.edgeworker.Models.Vehicle;
 import lsdi.edgeworker.Services.*;
 import lsdi.edgeworker.Threads.DatasetReaderThread;
@@ -42,8 +41,9 @@ public class EdgeworkerApplication {
         subscribeToDeploy();
         subscribeToUndeploy();
         subscribeToBusLocationEvents();
-        new ContextDataReaderThread().start();
-        new DatasetReaderThread().start();
+        subscribeToCarLocationEvents();
+        // new ContextDataReaderThread().start();
+        // new DatasetReaderThread().start();
     }
 
     private void selfRegister() {
@@ -61,6 +61,7 @@ public class EdgeworkerApplication {
     private void subscribeToDeploy() {
         MqttService mqttService = MqttService.getInstance();
         DeployService deployService = new DeployService();
+        
         mqttService.subscribe("/deploy/" + edgeworkerUuid, (topic, message) -> {
             new Thread(() -> {
                 ObjectMapper mapper = new ObjectMapper();
@@ -102,8 +103,22 @@ public class EdgeworkerApplication {
                 try {
                     Vehicle vehicle = mapper.readValue(message.getPayload(), Vehicle.class);
                     esperService.sendEvent(vehicle, "Vehicle");
-                    this.publishToContextData(vehicle);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }).start();
+        });
+    }
 
+    public void subscribeToCarLocationEvents() {
+        MqttService mqttService = MqttService.getInstance();
+        EsperService esperService = new EsperService();
+        ObjectMapper mapper = new ObjectMapper();
+        mqttService.subscribe("carro/" + edgeworkerUuid, (topic, message) -> {
+            new Thread(() -> {
+                try {
+                    Vehicle vehicle = mapper.readValue(message.getPayload(), Vehicle.class);
+                    esperService.sendEvent(vehicle, "Vehicle");
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -117,7 +132,7 @@ public class EdgeworkerApplication {
         try {
             new Thread(() -> {
                 try {
-                    mqttService.publish("/deploy/" + deployResponse.getRuleUuid(), mapper.writeValueAsBytes(deployResponse));
+                    mqttService.publish("/deploy-status/" + deployResponse.getRuleUuid(), mapper.writeValueAsBytes(deployResponse));
                 } catch (JsonProcessingException e) {
                     throw new RuntimeException(e);
                 }
@@ -128,24 +143,24 @@ public class EdgeworkerApplication {
         }
     }
 
-    public void publishToContextData(Vehicle vehicle) {
-        ContextMatcherService contextMatcherService = new ContextMatcherService("http://contextmatcher:8080");
-        try {
-            new Thread(() -> {
-                try {
-                    ContextDataRequestResponse contextDataRequestResponse = new ContextDataRequestResponse();
-                    contextDataRequestResponse.setHostUuid(edgeworkerUuid);
-                    contextDataRequestResponse.setLocation(new Location(vehicle.getLatitude(), vehicle.getLongitude()));
-                    contextDataRequestResponse.setTimestamp(LocalDateTime.now().toString());
-                    contextMatcherService.postContextData(contextDataRequestResponse);
-                    Thread.sleep(10000);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-            }).start();
+    // public void publishToContextData(Vehicle vehicle) {
+    //     ContextMatcherService contextMatcherService = new ContextMatcherService("http://contextmatcher:8080");
+    //     try {
+    //         new Thread(() -> {
+    //             try {
+    //                 ContextDataRequestResponse contextDataRequestResponse = new ContextDataRequestResponse();
+    //                 contextDataRequestResponse.setHostUuid(edgeworkerUuid);
+    //                 contextDataRequestResponse.setLocation(new Location(vehicle.getLatitude(), vehicle.getLongitude()));
+    //                 contextDataRequestResponse.setTimestamp(LocalDateTime.now().toString());
+    //                 contextMatcherService.postContextData(contextDataRequestResponse);
+    //                 Thread.sleep(10000);
+    //             } catch (InterruptedException e) {
+    //                 throw new RuntimeException(e);
+    //             }
+    //         }).start();
 
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
+    //     } catch (Exception e) {
+    //         e.printStackTrace();
+    //     }
+    // }
 }

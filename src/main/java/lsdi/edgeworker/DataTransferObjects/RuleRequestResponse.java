@@ -26,5 +26,6 @@ public class RuleRequestResponse {
     @Nullable
     @JsonProperty("webhook_url")
     String webhookUrl;
+    @JsonProperty("output_event_type")
     String outputEventType;
 }

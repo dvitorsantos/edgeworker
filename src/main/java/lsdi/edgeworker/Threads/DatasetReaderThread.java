@@ -1,5 +1,4 @@
 package lsdi.edgeworker.Threads;
-import lsdi.edgeworker.Models.SmartMeterMeasurement;
 import lsdi.edgeworker.Services.EsperService;
 
 import java.io.*;
@@ -26,10 +25,10 @@ public class DatasetReaderThread extends Thread {
 
                 Thread.sleep(500);
 
-                SmartMeterMeasurement smartMeterMeasurement =
-                        new SmartMeterMeasurement(Double.parseDouble(power[1]), Double.parseDouble(current[1]), Double.parseDouble(energy[1]));
+                // SmartMeterMeasurement smartMeterMeasurement =
+                //         new SmartMeterMeasurement(Double.parseDouble(power[1]), Double.parseDouble(current[1]), Double.parseDouble(energy[1]));
 
-                esperService.sendEvent(smartMeterMeasurement, "SmartMeterMeasurement");
+                // esperService.sendEvent(smartMeterMeasurement, "SmartMeterMeasurement");
             }
 
         } catch (FileNotFoundException | InterruptedException e) {

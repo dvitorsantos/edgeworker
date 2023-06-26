@@ -10,11 +10,11 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class Vehicle {
     @JsonProperty("id")
-    private Integer id;
+    private String id;
     @JsonProperty("latitude")
     private Double latitude;
     @JsonProperty("longitude")
     private Double longitude;
-    @JsonProperty("speed")
+    @JsonProperty("velocidade")
     private Double speed;
 }

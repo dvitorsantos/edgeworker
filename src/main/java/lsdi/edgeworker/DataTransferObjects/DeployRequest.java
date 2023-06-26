@@ -13,6 +13,6 @@ public class DeployRequest {
     @Nullable
     @JsonProperty("webhook_url")
     public String webhookUrl;
-    @JsonProperty("edge_rules")
+    @JsonProperty("rules")
     public List<RuleRequestResponse> edgeRules;
 }
