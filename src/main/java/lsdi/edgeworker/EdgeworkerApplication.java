@@ -37,7 +37,7 @@ public class EdgeworkerApplication {
 
     @EventListener(ApplicationReadyEvent.class)
     public void init() {
-        selfRegister();
+        // selfRegister();
         subscribeToDeploy();
         subscribeToUndeploy();
         subscribeToBusLocationEvents();
@@ -70,6 +70,7 @@ public class EdgeworkerApplication {
                     deployRequest.getEdgeRules().forEach(edgeRule -> {
                         new Thread(() -> {
                             DeployResponse deployResponse = deployService.deploy(edgeRule);
+                            System.out.println("Rule " + edgeRule.getName() + " deployed.");
                             publishToDeployStatus(deployResponse);
                         }).start();
                     });

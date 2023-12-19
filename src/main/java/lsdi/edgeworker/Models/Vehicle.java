@@ -17,4 +17,6 @@ public class Vehicle {
     private Double longitude;
     @JsonProperty("velocidade")
     private Double speed;
+    @JsonProperty("timestamp")
+    private Double timestamp;
 }
