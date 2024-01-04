@@ -61,19 +61,20 @@ public class EdgeworkerApplication {
     private void subscribeToDeploy() {
         MqttService mqttService = MqttService.getInstance();
         DeployService deployService = new DeployService();
-        
+
         mqttService.subscribe("/deploy/" + edgeworkerUuid, (topic, message) -> {
             new Thread(() -> {
                 ObjectMapper mapper = new ObjectMapper();
                 try {
                     DeployRequest deployRequest = mapper.readValue(message.toString(), DeployRequest.class);
-                    deployRequest.getEdgeRules().forEach(edgeRule -> {
-                        new Thread(() -> {
-                            DeployResponse deployResponse = deployService.deploy(edgeRule);
-                            System.out.println("Rule " + edgeRule.getName() + " deployed.");
-                            publishToDeployStatus(deployResponse);
-                        }).start();
-                    });
+                    RuleRequestResponse rule = deployRequest.getRule();
+
+                    new Thread(() -> {
+                        DeployResponse deployResponse = deployService.deploy(rule);
+                        System.out.println("Rule " + rule.getName() + " deployed.");
+                        publishToDeployStatus(deployResponse);
+                    }).start();
+
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -133,7 +134,8 @@ public class EdgeworkerApplication {
         try {
             new Thread(() -> {
                 try {
-                    mqttService.publish("/deploy-status/" + deployResponse.getRuleUuid(), mapper.writeValueAsBytes(deployResponse));
+                    mqttService.publish("/deploy-status/" + deployResponse.getRuleUuid(),
+                            mapper.writeValueAsBytes(deployResponse));
                 } catch (JsonProcessingException e) {
                     throw new RuntimeException(e);
                 }
@@ -145,23 +147,26 @@ public class EdgeworkerApplication {
     }
 
     // public void publishToContextData(Vehicle vehicle) {
-    //     ContextMatcherService contextMatcherService = new ContextMatcherService("http://contextmatcher:8080");
-    //     try {
-    //         new Thread(() -> {
-    //             try {
-    //                 ContextDataRequestResponse contextDataRequestResponse = new ContextDataRequestResponse();
-    //                 contextDataRequestResponse.setHostUuid(edgeworkerUuid);
-    //                 contextDataRequestResponse.setLocation(new Location(vehicle.getLatitude(), vehicle.getLongitude()));
-    //                 contextDataRequestResponse.setTimestamp(LocalDateTime.now().toString());
-    //                 contextMatcherService.postContextData(contextDataRequestResponse);
-    //                 Thread.sleep(10000);
-    //             } catch (InterruptedException e) {
-    //                 throw new RuntimeException(e);
-    //             }
-    //         }).start();
+    // ContextMatcherService contextMatcherService = new
+    // ContextMatcherService("http://contextmatcher:8080");
+    // try {
+    // new Thread(() -> {
+    // try {
+    // ContextDataRequestResponse contextDataRequestResponse = new
+    // ContextDataRequestResponse();
+    // contextDataRequestResponse.setHostUuid(edgeworkerUuid);
+    // contextDataRequestResponse.setLocation(new Location(vehicle.getLatitude(),
+    // vehicle.getLongitude()));
+    // contextDataRequestResponse.setTimestamp(LocalDateTime.now().toString());
+    // contextMatcherService.postContextData(contextDataRequestResponse);
+    // Thread.sleep(10000);
+    // } catch (InterruptedException e) {
+    // throw new RuntimeException(e);
+    // }
+    // }).start();
 
-    //     } catch (Exception e) {
-    //         e.printStackTrace();
-    //     }
+    // } catch (Exception e) {
+    // e.printStackTrace();
+    // }
     // }
 }

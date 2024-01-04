@@ -19,13 +19,10 @@ public class RuleRequestResponse {
     String qos;
     @JsonProperty("tag_filter")
     String tagFilter;
-    @JsonProperty("event_type")
-    String eventType;
-    @JsonProperty("event_attributes")
-    Map<String, String> eventAttributes;
-    @Nullable
-    @JsonProperty("webhook_url")
-    String webhookUrl;
+    @JsonProperty("input_event_type")
+    String inputEventType;
+    @JsonProperty("input_event_attributes")
+    Map<String, String> inputEventAttributes;
     @JsonProperty("output_event_type")
     String outputEventType;
 }

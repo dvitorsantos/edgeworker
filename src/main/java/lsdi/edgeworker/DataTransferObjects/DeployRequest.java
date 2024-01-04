@@ -9,10 +9,10 @@ import java.util.List;
 @Data
 public class DeployRequest {
     @JsonProperty("host_uuid")
-    public String hostUuid;
-    @Nullable
+    private String hostUuid;
+    @JsonProperty("host_type")
+    private String hostType;
     @JsonProperty("webhook_url")
-    public String webhookUrl;
-    @JsonProperty("rules")
-    public List<RuleRequestResponse> edgeRules;
+    private String webhookUrl;
+    private RuleRequestResponse rule;
 }
