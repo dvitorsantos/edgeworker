@@ -71,7 +71,7 @@ public class EdgeworkerApplication {
 
                     new Thread(() -> {
                         DeployResponse deployResponse = deployService.deploy(rule);
-                        System.out.println("Rule " + rule.getName() + " deployed.");
+                        System.out.println("INFO: Rule " + rule.getName() + " (" + rule.getDefinition() + ") deployed.");
                         publishToDeployStatus(deployResponse);
                     }).start();
 
