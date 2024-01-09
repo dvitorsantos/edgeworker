@@ -8,12 +8,13 @@ import com.espertech.esper.compiler.client.EPCompiler;
 import com.espertech.esper.compiler.client.EPCompilerProvider;
 import com.espertech.esper.runtime.client.*;
 import lombok.Data;
-import lsdi.edgeworker.DataTransferObjects.DeployRequest;
 import lsdi.edgeworker.DataTransferObjects.RuleRequestResponse;
 import lsdi.edgeworker.Models.Vehicle;
-import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.Map;
+
+import org.springframework.stereotype.Service;
 
 @Data
 @Service
@@ -23,6 +24,7 @@ public final class EsperService {
     private EPCompiler compiler;
     private EPRuntime runtime;
     private static EsperService instance;
+    private Map<String, String> deployedRulesMap;
 
     public EsperService() {
         configuration = new Configuration();
@@ -30,6 +32,7 @@ public final class EsperService {
         arguments = new CompilerArguments(configuration);
         compiler = EPCompilerProvider.getCompiler();
         runtime = EPRuntimeProvider.getDefaultRuntime(configuration);
+        this.deployedRulesMap = new HashMap<>();
     }
 
     public static EsperService getInstance() {
@@ -45,8 +48,9 @@ public final class EsperService {
         return runtime.getDeploymentService().deploy(compiled);
     }
 
-    public void undeploy(String deploymentId) throws EPUndeployException {
-        runtime.getDeploymentService().undeploy(deploymentId);
+    public void undeploy(String ruleUuid) throws EPUndeployException {
+        String deploymentUuid = deployedRulesMap.get(ruleUuid);
+        runtime.getDeploymentService().undeploy(deploymentUuid);
     }
     
     public void sendEvent(Vehicle event, String type) {
@@ -55,6 +59,10 @@ public final class EsperService {
 
     public EPStatement getStatement(String deploymentId, String statementName) {
         return runtime.getDeploymentService().getStatement(deploymentId, statementName);
+    }
+
+    public void saveDeployedRule(String ruleUuid, String deploymentUuid) {
+        this.deployedRulesMap.put(ruleUuid, deploymentUuid);
     }
 
     public static String buildEPL(RuleRequestResponse edgeRule) {

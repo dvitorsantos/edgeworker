@@ -15,27 +15,29 @@ public class DeployService {
     String hostUuid = System.getenv("EDGEWORKER_UUID");
     EsperService esperService = EsperService.getInstance();
 
-    public DeployResponse deploy(RuleRequestResponse edgeRule) {
+    public DeployResponse deploy(RuleRequestResponse rule) {
         try {
-            EPCompiled epCompiled = esperService.compile(EsperService.buildEPL(edgeRule));
+            EPCompiled epCompiled = esperService.compile(EsperService.buildEPL(rule));
             EPDeployment epDeployment = esperService.deploy(epCompiled);
-            EPStatement epStatement = esperService.getStatement(epDeployment.getDeploymentId(), edgeRule.getName());
-            epStatement.addListener(new EventListener(edgeRule, null));
+            EPStatement epStatement = esperService.getStatement(epDeployment.getDeploymentId(), rule.getName());
+            epStatement.addListener(new EventListener(rule, null));
 
-            return new DeployResponse(hostUuid, epDeployment.getDeploymentId(), edgeRule.getUuid(), "DEPLOYED");
+            esperService.saveDeployedRule(rule.getUuid(), epDeployment.getDeploymentId());
+            return new DeployResponse(hostUuid, epDeployment.getDeploymentId(), rule.getUuid(), "DEPLOYED");
         } catch (EPCompileException | EPDeployException exception) {
             exception.printStackTrace();
-            return new DeployResponse(hostUuid, null, edgeRule.getUuid(), "ERROR");
+            return new DeployResponse(hostUuid, null, rule.getUuid(), "ERROR");
         }
     }
 
-    public DeployResponse undeploy(String deploymentId) {
+    public DeployResponse undeploy(String ruleUuid) {
         try {
-            esperService.undeploy(deploymentId);
-            return new DeployResponse(hostUuid, deploymentId, null, "UNDEPLOYED");
+            esperService.undeploy(ruleUuid);
+            System.out.println("(INFO): rule " + ruleUuid + " undeployed.");
+            return new DeployResponse(hostUuid, null, ruleUuid, "UNDEPLOYED");
         } catch (EPUndeployException exception) {
-            exception.printStackTrace();
-            return new DeployResponse(hostUuid, deploymentId, null, "ERROR");
+            System.out.println("(ERROR): " + exception.getMessage());
+            return new DeployResponse(hostUuid, null, ruleUuid, "ERROR");
         }
     }
 }

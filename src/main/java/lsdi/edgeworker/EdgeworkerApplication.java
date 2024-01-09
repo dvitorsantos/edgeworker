@@ -13,11 +13,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 
-import java.io.DataInput;
-import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
-
 @SpringBootApplication
 public class EdgeworkerApplication {
     @Value("${edgeworker.uuid}")
@@ -37,7 +32,6 @@ public class EdgeworkerApplication {
 
     @EventListener(ApplicationReadyEvent.class)
     public void init() {
-        // selfRegister();
         subscribeToDeploy();
         subscribeToUndeploy();
         subscribeToBusLocationEvents();
@@ -85,7 +79,7 @@ public class EdgeworkerApplication {
     private void subscribeToUndeploy() {
         MqttService mqttService = MqttService.getInstance();
         DeployService deployService = new DeployService();
-        mqttService.subscribe("/undeploy", (topic, message) -> {
+        mqttService.subscribe("/undeploy/" + edgeworkerUuid, (topic, message) -> {
             ObjectMapper mapper = new ObjectMapper();
             try {
                 String deployId = mapper.readValue(message.toString(), String.class);
