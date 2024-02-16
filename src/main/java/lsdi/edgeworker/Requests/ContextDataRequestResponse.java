@@ -1,4 +1,4 @@
-package lsdi.edgeworker.DataTransferObjects;
+package lsdi.edgeworker.Requests;
 
 import lombok.Data;
 import lsdi.edgeworker.Models.Location;

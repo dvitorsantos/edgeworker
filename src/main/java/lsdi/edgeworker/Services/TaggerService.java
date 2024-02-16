@@ -1,7 +1,8 @@
 package lsdi.edgeworker.Services;
 
-import lsdi.edgeworker.DataTransferObjects.TaggedObjectRequest;
 import org.springframework.web.client.RestTemplate;
+
+import lsdi.edgeworker.Requests.TaggedObjectRequest;
 
 public class TaggerService {
     private final RestTemplate restTemplate;

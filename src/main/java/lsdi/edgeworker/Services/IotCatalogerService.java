@@ -1,9 +1,10 @@
 package lsdi.edgeworker.Services;
 
-import lsdi.edgeworker.DataTransferObjects.IoTGatewayRequest;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.web.client.RestTemplate;
+
+import lsdi.edgeworker.Requests.IoTGatewayRequest;
 
 public class IotCatalogerService {
     private final RestTemplate restTemplate;

@@ -1,4 +1,4 @@
-package lsdi.edgeworker.DataTransferObjects;
+package lsdi.edgeworker.Requests;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
@@ -14,5 +14,5 @@ public class DeployRequest {
     private String hostType;
     @JsonProperty("webhook_url")
     private String webhookUrl;
-    private RuleRequestResponse rule;
+    private RuleRequest rule;
 }

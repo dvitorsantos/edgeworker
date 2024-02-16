@@ -1,4 +1,4 @@
-package lsdi.edgeworker.DataTransferObjects;
+package lsdi.edgeworker.Requests;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;

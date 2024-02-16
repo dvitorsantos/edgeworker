@@ -1,4 +1,4 @@
-package lsdi.edgeworker.DataTransferObjects;
+package lsdi.edgeworker.Requests;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
@@ -7,7 +7,7 @@ import org.springframework.lang.Nullable;
 import java.util.Map;
 
 @Data
-public class RuleRequestResponse {
+public class RuleRequest {
     @Nullable
     String uuid;
     String name;
@@ -25,4 +25,6 @@ public class RuleRequestResponse {
     Map<String, String> inputEventAttributes;
     @JsonProperty("output_event_type")
     String outputEventType;
+    @JsonProperty("output_event_attributes")
+    Map<String, String> outputEventAttributes;
 }

@@ -2,8 +2,9 @@ package lsdi.edgeworker;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lsdi.edgeworker.DataTransferObjects.*;
+
 import lsdi.edgeworker.Models.Vehicle;
+import lsdi.edgeworker.Requests.*;
 import lsdi.edgeworker.Services.*;
 import lsdi.edgeworker.Threads.DatasetReaderThread;
 import lsdi.edgeworker.Threads.ContextDataReaderThread;
@@ -61,7 +62,7 @@ public class EdgeworkerApplication {
                 ObjectMapper mapper = new ObjectMapper();
                 try {
                     DeployRequest deployRequest = mapper.readValue(message.toString(), DeployRequest.class);
-                    RuleRequestResponse rule = deployRequest.getRule();
+                    RuleRequest rule = deployRequest.getRule();
 
                     new Thread(() -> {
                         DeployResponse deployResponse = deployService.deploy(rule);

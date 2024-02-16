@@ -1,7 +1,8 @@
 package lsdi.edgeworker.Services;
 
-import lsdi.edgeworker.DataTransferObjects.ContextDataRequestResponse;
 import org.springframework.web.client.RestTemplate;
+
+import lsdi.edgeworker.Requests.ContextDataRequestResponse;
 
 public class ContextMatcherService {
     private String url;

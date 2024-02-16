@@ -8,8 +8,8 @@ import com.espertech.esper.compiler.client.EPCompiler;
 import com.espertech.esper.compiler.client.EPCompilerProvider;
 import com.espertech.esper.runtime.client.*;
 import lombok.Data;
-import lsdi.edgeworker.DataTransferObjects.RuleRequestResponse;
 import lsdi.edgeworker.Models.Vehicle;
+import lsdi.edgeworker.Requests.RuleRequest;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -65,7 +65,7 @@ public final class EsperService {
         this.deployedRulesMap.put(ruleUuid, deploymentUuid);
     }
 
-    public static String buildEPL(RuleRequestResponse edgeRule) {
+    public static String buildEPL(RuleRequest edgeRule) {
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append("@Name('");
         stringBuilder.append(edgeRule.getName());

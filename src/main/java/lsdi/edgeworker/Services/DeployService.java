@@ -6,16 +6,18 @@ import com.espertech.esper.runtime.client.EPDeployException;
 import com.espertech.esper.runtime.client.EPDeployment;
 import com.espertech.esper.runtime.client.EPStatement;
 import com.espertech.esper.runtime.client.EPUndeployException;
-import lsdi.edgeworker.DataTransferObjects.DeployResponse;
-import lsdi.edgeworker.DataTransferObjects.RuleRequestResponse;
+
 import lsdi.edgeworker.Listeners.EventListener;
+import lsdi.edgeworker.Requests.DeployResponse;
+import lsdi.edgeworker.Requests.RuleRequest;
+
 import org.springframework.stereotype.Service;
 @Service
 public class DeployService {
     String hostUuid = System.getenv("EDGEWORKER_UUID");
     EsperService esperService = EsperService.getInstance();
 
-    public DeployResponse deploy(RuleRequestResponse rule) {
+    public DeployResponse deploy(RuleRequest rule) {
         try {
             EPCompiled epCompiled = esperService.compile(EsperService.buildEPL(rule));
             EPDeployment epDeployment = esperService.deploy(epCompiled);
