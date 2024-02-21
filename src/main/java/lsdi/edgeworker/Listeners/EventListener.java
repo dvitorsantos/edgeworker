@@ -80,8 +80,9 @@ public class EventListener implements UpdateListener {
                             EventRequest eventRequest = new EventRequest();
                             eventRequest.setWebhookUrl(url);
                             eventRequest.setTaggerExpression(rule.getTagFilter());
-                            eventRequest.setEvent(event);
+                            eventRequest.setEpnUuid(rule.getEventProcessNetworkUuid());
                             eventRequest.setTarget("INTERSCITY");
+                            eventRequest.setEvent(event);
                             restTemplate.postForObject(eventRequest.getWebhookUrl() + "/event", eventRequest.getTarget(), Map.class);
                         }
                     }

@@ -9,15 +9,15 @@ public class ContextDataReaderThread extends Thread {
     @Override
     public void run() {
         super.run();
-        while (true) {
-            try {
-                long memory = osBean.getFreeMemorySize();
-                double cpu = osBean.getProcessCpuLoad();
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        }
+        // while (true) {
+        //     try {
+        //         long memory = osBean.getFreeMemorySize();
+        //         double cpu = osBean.getProcessCpuLoad();
+        //         Thread.sleep(1000);
+        //     } catch (InterruptedException e) {
+        //         throw new RuntimeException(e);
+        //     }
+        // }
     }
 
 }

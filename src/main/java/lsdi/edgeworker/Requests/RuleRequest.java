@@ -27,4 +27,6 @@ public class RuleRequest {
     String outputEventType;
     @JsonProperty("output_event_attributes")
     Map<String, String> outputEventAttributes;
+    @JsonProperty("event_process_network_uuid")
+    String eventProcessNetworkUuid;
 }

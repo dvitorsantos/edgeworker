@@ -9,5 +9,6 @@ public class EventRequest {
     private String webhookUrl;
     private String taggerExpression;
     private String target;
+    private String epnUuid;
     private Map<String, Object> event;
 }
